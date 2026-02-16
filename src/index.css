@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-gray-900;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Smooth transitions */
+@layer components {
+  .transition-smooth {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 rounded-lg bg-black text-white hover:bg-gray-800 font-semibold transition-smooth;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-lg border-2 border-gray-300 text-gray-900 hover:bg-gray-50 font-semibold transition-smooth;
+  }
+}
