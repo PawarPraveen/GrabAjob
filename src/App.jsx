@@ -1,61 +1,97 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import Navbar from './components/Navbar'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
+import JobSeekerDashboard from './pages/JobSeekerDashboard'
+import JobsPage from './pages/JobsPage'
+import ProfilePage from './pages/ProfilePage'
+import RecruiterDashboard from './pages/RecruiterDashboard'
 import { supabase } from './lib/supabaseClient'
 import './index.css'
 
-// Placeholder dashboard page
-function Dashboard() {
-  const [user, setUser] = useState(null)
+// Protected Route Component
+function ProtectedRoute({ children, requiredRole }) {
+  const [isAuthorized, setIsAuthorized] = useState(null)
 
   useEffect(() => {
-    const getSession = async () => {
+    const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user)
-    }
-    getSession()
-  }, [])
+      if (!session) {
+        setIsAuthorized(false)
+        return
+      }
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    window.location.href = '/'
+      if (requiredRole) {
+        const userRole = localStorage.getItem('userRole')
+        setIsAuthorized(userRole === requiredRole)
+      } else {
+        setIsAuthorized(true)
+      }
+    }
+
+    checkAuth()
+  }, [requiredRole])
+
+  if (isAuthorized === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-brand-light">
+        <div className="animate-spin w-12 h-12 border-4 border-brand-primary border-t-brand-accent rounded-full"></div>
+      </div>
+    )
   }
 
-  return (
-    <div className="min-h-screen pt-24 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="glass-effect rounded-2xl p-12 border border-white/10 text-center">
-          <h1 className="text-4xl font-bold mb-4 gradient-text">Welcome to Dashboard</h1>
-          {user && (
-            <p className="text-lg text-gray-300 mb-8">
-              Hello, {user.email}! 👋
-            </p>
-          )}
-          <p className="text-gray-400 mb-8">
-            Dashboard functionality coming soon. This is a placeholder page to demonstrate successful authentication.
-          </p>
-          <button
-            onClick={handleLogout}
-            className="btn-primary"
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+  if (!isAuthorized) {
+    return <Navigate to="/auth?tab=login" />
+  }
+
+  return children
 }
 
 function App() {
   return (
     <Router>
-      <Navbar />
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* Job Seeker Routes */}
+        <Route
+          path="/dashboard/seeker"
+          element={
+            <ProtectedRoute requiredRole="job-seeker">
+              <JobSeekerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/seeker/jobs"
+          element={
+            <ProtectedRoute requiredRole="job-seeker">
+              <JobsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/seeker/profile"
+          element={
+            <ProtectedRoute requiredRole="job-seeker">
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Recruiter Routes */}
+        <Route
+          path="/dashboard/recruiter"
+          element={
+            <ProtectedRoute requiredRole="recruiter">
+              <RecruiterDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Fallback Redirect */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
