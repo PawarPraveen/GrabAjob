@@ -216,7 +216,10 @@ export default function Auth() {
 
                     <div className="space-y-4">
                       <button
-                        onClick={() => setRole('job-seeker')}
+                        onClick={() => {
+                          setRole('job-seeker')
+                          setStep(2)
+                        }}
                         className="w-full p-6 rounded-2xl border-2 border-gray-200 hover:border-brand-accent hover:shadow-lg transition-smooth text-left group"
                       >
                         <div className="text-4xl mb-3">👤</div>
@@ -225,7 +228,10 @@ export default function Auth() {
                       </button>
 
                       <button
-                        onClick={() => setRole('recruiter')}
+                        onClick={() => {
+                          setRole('recruiter')
+                          setStep(2)
+                        }}
                         className="w-full p-6 rounded-2xl border-2 border-gray-200 hover:border-brand-accent hover:shadow-lg transition-smooth text-left group"
                       >
                         <div className="text-4xl mb-3">🏢</div>

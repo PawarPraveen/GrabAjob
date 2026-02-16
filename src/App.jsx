@@ -6,6 +6,7 @@ import JobSeekerDashboard from './pages/JobSeekerDashboard'
 import JobsPage from './pages/JobsPage'
 import ProfilePage from './pages/ProfilePage'
 import RecruiterDashboard from './pages/RecruiterDashboard'
+import CreateAccountDemo from './pages/CreateAccountDemo'
 import { supabase } from './lib/supabaseClient'
 import './index.css'
 
@@ -54,6 +55,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/demo/create-account" element={<CreateAccountDemo />} />
 
         {/* Job Seeker Routes */}
         <Route
