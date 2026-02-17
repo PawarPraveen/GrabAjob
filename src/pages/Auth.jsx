@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate, Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, ArrowLeft, CheckCircle, Upload } from 'lucide-react'
+import { ArrowRight, ArrowLeft } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import NavbarPublic from '../components/NavbarPublic'
 
@@ -16,118 +16,127 @@ export default function Auth() {
 
   // Form State
   const [formData, setFormData] = useState({
+    fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    // Job Seeker fields
-    experienceLevel: 'fresher',
-    skills: [],
-    location: '',
-    resumeUrl: '',
-    // Recruiter fields
-    companyName: '',
-    companySize: '',
-    hiringRole: '',
-    workEmail: '',
   })
-
-  const [skillInput, setSkillInput] = useState('')
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
-
-  const addSkill = (e) => {
-    if (e.key === 'Enter' && skillInput.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        skills: [...prev.skills, skillInput.trim()]
-      }))
-      setSkillInput('')
-    }
+  
+  // SUPABASE CLIENT CHECK (debug) - safe access for browser
+  try {
+    console.log('VITE SUPABASE URL:', import.meta.env.VITE_SUPABASE_URL)
+    console.log('VITE SUPABASE KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY)
+    console.log('PROCESS SUPABASE URL:', typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL : 'undefined')
+    console.log('PROCESS SUPABASE KEY:', typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY : 'undefined')
+  } catch (e) {
+    // ignore in environments where process is not defined
   }
 
-  const removeSkill = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      skills: prev.skills.filter((_, i) => i !== index)
-    }))
+  // Utility: safe JSON stringify for console logging (handles circulars)
+  const safeStringify = (obj) => {
+    try {
+      return JSON.stringify(obj, Object.getOwnPropertyNames(obj), 2)
+    } catch (e) {
+      try {
+        return JSON.stringify(JSON.parse(JSON.stringify(obj)), null, 2)
+      } catch (e2) {
+        return String(obj)
+      }
+    }
   }
 
   const handleSignUp = async () => {
-    setLoading(true)
-    setError(null)
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      setLoading(false)
-      return
-    }
-
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-      })
+      setLoading(true);
 
-      if (error) {
-        setError(error.message)
-        setLoading(false)
-        return
+      const cleanEmail = (formData.email || '').trim();
+      const password = formData.password;
+      const confirmPassword = formData.confirmPassword;
+
+      if (!cleanEmail || !password) {
+        alert("Email and password required");
+        setLoading(false);
+        return;
       }
 
-      // Store role and additional data
-      localStorage.setItem('userRole', role)
-      localStorage.setItem('userData', JSON.stringify({
-        ...formData,
-        userId: data.user.id
-      }))
+      if (password !== confirmPassword) {
+        alert("Passwords do not match");
+        setLoading(false);
+        return;
+      }
 
-      // Redirect to dashboard based on role
-      setTimeout(() => {
-        if (role === 'job-seeker') {
-          navigate('/dashboard/seeker')
-        } else {
-          navigate('/dashboard/recruiter')
-        }
-      }, 500)
+      console.log("Creating user with:", cleanEmail);
+
+      const { data, error } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password: password
+      });
+
+      console.log("Signup response:", data);
+      console.log("Signup error:", error);
+
+      if (error) {
+        alert("Signup failed: " + error.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        alert("Signup successful");
+        console.log("Created user:", data.user);
+      }
+
     } catch (err) {
-      setError(err.message)
+      console.error("Unexpected error:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
-  const handleLogin = async () => {
-    setLoading(true)
-    setError(null)
-
+  const handleLogin = async (e) => {
+    e?.preventDefault?.()
+    if (loading) return
     try {
+      setLoading(true);
+
+      const cleanEmail = (formData.email || '').trim();
+      const password = formData.password;
+
+      // Debug: show which SUPABASE URL is being used (guarded)
+      console.log('SUPABASE URL:', typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL : 'undefined');
+
+      console.log('Attempting login with:', cleanEmail);
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      })
+        email: cleanEmail,
+        password: password
+      });
+
+      console.log('Login response:', data);
+      console.log('Login response (string):', safeStringify(data));
+      console.log('Login error:', error);
+      console.log('Login error (string):', safeStringify(error));
 
       if (error) {
-        setError(error.message)
-        setLoading(false)
-        return
+        alert('Login failed: ' + error.message);
+        setLoading(false);
+        return;
       }
 
-      // Redirect to appropriate dashboard
-      const savedRole = localStorage.getItem('userRole') || 'job-seeker'
-      setTimeout(() => {
-        if (savedRole === 'job-seeker') {
-          navigate('/dashboard/seeker')
-        } else {
-          navigate('/dashboard/recruiter')
-        }
-      }, 500)
+      if (data?.session) {
+        console.log('Session:', data.session);
+        alert('Login successful');
+      }
+
     } catch (err) {
-      setError(err.message)
+      console.error('Unexpected login error:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -149,17 +158,10 @@ export default function Auth() {
     setRole(null)
     setError(null)
     setFormData({
+      fullName: '',
       email: '',
       password: '',
       confirmPassword: '',
-      experienceLevel: 'fresher',
-      skills: [],
-      location: '',
-      resumeUrl: '',
-      companyName: '',
-      companySize: '',
-      hiringRole: '',
-      workEmail: '',
     })
   }
 
@@ -242,7 +244,7 @@ export default function Auth() {
                   </motion.div>
                 )}
 
-                {/* Step 2: Basic Info */}
+                {/* Step 2: Create Account */}
                 {step === 2 && role && (
                   <motion.div
                     key="basic-info"
@@ -252,9 +254,21 @@ export default function Auth() {
                     transition={{ duration: 0.3 }}
                   >
                     <h2 className="heading-md mb-2">Create Your Account</h2>
-                    <p className="text-gray-600 mb-8">Step 2 of 3</p>
+                    <p className="text-gray-600 mb-8">Step 2 of 2</p>
 
                     <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-semibold mb-2">Full Name</label>
+                        <input
+                          type="text"
+                          name="fullName"
+                          value={formData.fullName}
+                          onChange={handleInputChange}
+                          className="input-field"
+                          placeholder="John Doe"
+                        />
+                      </div>
+
                       <div>
                         <label className="block text-sm font-semibold mb-2">Email Address</label>
                         <input
@@ -277,6 +291,9 @@ export default function Auth() {
                           className="input-field"
                           placeholder="Minimum 8 characters"
                         />
+                        {formData.password && formData.password.length < 8 && (
+                          <p className="text-red-600 text-sm mt-1">Password must be at least 8 characters</p>
+                        )}
                       </div>
 
                       <div>
@@ -289,6 +306,9 @@ export default function Auth() {
                           className="input-field"
                           placeholder="Confirm password"
                         />
+                        {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                          <p className="text-red-600 text-sm mt-1">Passwords do not match</p>
+                        )}
                       </div>
 
                       {error && (
@@ -303,169 +323,11 @@ export default function Auth() {
 
                       <div className="flex gap-3 pt-4">
                         <button
-                          onClick={prevStep}
-                          className="flex-1 btn-outline flex items-center justify-center gap-2"
-                        >
-                          <ArrowLeft size={18} /> Back
-                        </button>
-                        <button
-                          onClick={nextStep}
-                          className="flex-1 btn-primary flex items-center justify-center gap-2"
-                        >
-                          Next <ArrowRight size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Step 3: Role-Specific Info */}
-                {step === 3 && role && (
-                  <motion.div
-                    key="role-specific"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <h2 className="heading-md mb-2">Complete Your Profile</h2>
-                    <p className="text-gray-600 mb-8">Step 3 of 3</p>
-
-                    <div className="space-y-6">
-                      {role === 'job-seeker' ? (
-                        <>
-                          <div>
-                            <label className="block text-sm font-semibold mb-3">Experience Level</label>
-                            <div className="space-y-2">
-                              {['fresher', 'experienced'].map(level => (
-                                <label key={level} className="flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 cursor-pointer hover:border-brand-accent transition-smooth" style={{
-                                  borderColor: formData.experienceLevel === level ? 'rgb(59, 130, 246)' : 'rgb(229, 231, 235)'
-                                }}>
-                                  <input
-                                    type="radio"
-                                    name="experienceLevel"
-                                    value={level}
-                                    checked={formData.experienceLevel === level}
-                                    onChange={handleInputChange}
-                                    className="w-5 h-5"
-                                  />
-                                  <span className="font-medium capitalize">{level === 'fresher' ? 'Fresher (0-2 years)' : 'Experienced (2+ years)'}</span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-semibold mb-2">Location</label>
-                            <input
-                              type="text"
-                              name="location"
-                              value={formData.location}
-                              onChange={handleInputChange}
-                              className="input-field"
-                              placeholder="City, Country"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-semibold mb-2">Top Skills</label>
-                            <input
-                              type="text"
-                              value={skillInput}
-                              onChange={(e) => setSkillInput(e.target.value)}
-                              onKeyDown={addSkill}
-                              className="input-field"
-                              placeholder="Type skill and press Enter (e.g., React, Python)"
-                            />
-                            <div className="flex flex-wrap gap-2 mt-4">
-                              {formData.skills.map((skill, idx) => (
-                                <motion.div
-                                  key={idx}
-                                  initial={{ opacity: 0, scale: 0.8 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  className="badge-primary flex items-center gap-2"
-                                >
-                                  {skill}
-                                  <button
-                                    onClick={() => removeSkill(idx)}
-                                    className="hover:text-brand-accent"
-                                  >
-                                    ×
-                                  </button>
-                                </motion.div>
-                              ))}
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div>
-                            <label className="block text-sm font-semibold mb-2">Company Name</label>
-                            <input
-                              type="text"
-                              name="companyName"
-                              value={formData.companyName}
-                              onChange={handleInputChange}
-                              className="input-field"
-                              placeholder="Your company name"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-semibold mb-2">Company Size</label>
-                            <select
-                              name="companySize"
-                              value={formData.companySize}
-                              onChange={handleInputChange}
-                              className="input-field"
-                            >
-                              <option value="">Select company size</option>
-                              <option value="1-10">1-10 employees</option>
-                              <option value="10-50">10-50 employees</option>
-                              <option value="50-200">50-200 employees</option>
-                              <option value="200+">200+ employees</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-semibold mb-2">Primary Hiring Role</label>
-                            <input
-                              type="text"
-                              name="hiringRole"
-                              value={formData.hiringRole}
-                              onChange={handleInputChange}
-                              className="input-field"
-                              placeholder="e.g., Full Stack Engineer"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-semibold mb-2">Work Email</label>
-                            <input
-                              type="email"
-                              name="workEmail"
-                              value={formData.workEmail}
-                              onChange={handleInputChange}
-                              className="input-field"
-                              placeholder="company@example.com"
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      {error && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"
-                        >
-                          {error}
-                        </motion.div>
-                      )}
-
-                      <div className="flex gap-3 pt-4">
-                        <button
-                          onClick={prevStep}
+                          onClick={() => {
+                            setRole(null)
+                            setStep(1)
+                            setError(null)
+                          }}
                           className="flex-1 btn-outline flex items-center justify-center gap-2"
                         >
                           <ArrowLeft size={18} /> Back
@@ -473,9 +335,18 @@ export default function Auth() {
                         <button
                           onClick={handleSignUp}
                           disabled={loading}
-                          className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+                          className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {loading ? 'Creating account...' : 'Create Account'}
+                          {loading ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Creating account...
+                            </>
+                          ) : (
+                            <>
+                              Create Account <ArrowRight size={18} />
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>

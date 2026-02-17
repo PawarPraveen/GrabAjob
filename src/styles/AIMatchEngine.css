@@ -1,0 +1,75 @@
+/* AIMatchEngine Styles */
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Smooth transitions */
+textarea, input, button {
+  transition: all 0.3s ease;
+}
+
+/* Keyword tags animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.keyword-tag {
+  animation: slideIn 0.3s ease forwards;
+}
+
+/* Progress circle animation */
+@keyframes fillCircle {
+  from {
+    stroke-dasharray: 0 440;
+  }
+}
+
+circle[stroke="#22c55e"],
+circle[stroke="#f59e0b"],
+circle[stroke="#ef4444"] {
+  animation: fillCircle 1s ease-out forwards;
+}
+
+/* Hover effects */
+.resource-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading state */
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .heading-lg {
+    font-size: 1.875rem;
+  }
+
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+}

@@ -62,15 +62,37 @@ export default function AuthTabs() {
       return
     }
 
-    const { data, error: signInError } = await auth.signin(loginForm.email, loginForm.password)
+    // Trim email before login
+    const trimmedEmail = loginForm.email.trim()
+    console.log('\n🔐 [UI] LOGIN SUBMISSION START')
+    console.log('🔐 [UI] Email (trimmed):', trimmedEmail)
+    console.log('🔐 [UI] Password length:', loginForm.password.length)
+
+    const { data, error: signInError } = await auth.signin(trimmedEmail, loginForm.password)
+
+    console.log('🔐 [UI] Signin returned - Data:', !!data, 'Error:', !!signInError)
 
     if (signInError) {
-      setError(signInError)
+      console.error('\n❌ [UI] LOGIN FAILED')
+      console.error('❌ [UI] Error:', signInError)
+      
+      if (signInError.includes('Invalid login credentials')) {
+        setError('❌ Email or password is incorrect. Please try again.')
+      } else if (signInError.includes('Email not confirmed')) {
+        setError('📧 Please verify your email before logging in. Check your inbox.')
+      } else if (signInError.includes('User not found')) {
+        setError('❌ No account found. Please sign up first.')
+      } else if (signInError.includes('No session')) {
+        setError('❌ Login failed: No session created')
+      } else {
+        setError('❌ ' + signInError)
+      }
       setLoading(false)
       return
     }
 
-    showNotification('Login successful! Redirecting...')
+    console.log('\n✅ [UI] LOGIN SUCCESS - User:', data?.user?.email)
+    showNotification('✅ Login successful! Redirecting...')
     setTimeout(() => {
       navigate('/dashboard')
     }, 1500)
@@ -105,8 +127,16 @@ export default function AuthTabs() {
       return
     }
 
+    // Trim email before signup
+    const trimmedEmail = registerForm.email.trim()
+    console.log('\n🔐 [UI] SIGNUP SUBMISSION START')
+    console.log('🔐 [UI] Full Name:', registerForm.fullName)
+    console.log('🔐 [UI] Email (trimmed):', trimmedEmail)
+    console.log('🔐 [UI] Password length:', registerForm.password.length)
+    console.log('🔐 [UI] Role:', registerForm.role)
+
     const { data, error: signUpError } = await auth.signup(
-      registerForm.email,
+      trimmedEmail,
       registerForm.password,
       {
         fullName: registerForm.fullName,
@@ -114,13 +144,37 @@ export default function AuthTabs() {
       }
     )
 
+    console.log('🔐 [UI] Signup returned - Data:', !!data, 'UserCreated:', !!data?.user, 'SessionCreated:', !!data?.session, 'Error:', !!signUpError)
+
     if (signUpError) {
-      setError(signUpError)
+      console.error('\n❌ [UI] SIGNUP FAILED')
+      console.error('❌ [UI] Error:', signUpError)
+      
+      if (signUpError.includes('already registered')) {
+        setError('Already registered. Please log in or use a different email.')
+      } else if (signUpError.includes('invalid_email')) {
+        setError('Please enter a valid email address.')
+      } else {
+        setError('❌ ' + signUpError)
+      }
       setLoading(false)
       return
     }
 
-    showNotification('Registration successful! Please check your email to verify your account.')
+    console.log('\n✅ [UI] SIGNUP SUCCESS - User:', data?.user?.email)
+
+    // Step 5: Check if email confirmation is required
+    if (data?.user && !data?.session) {
+      console.warn('⚠️  [UI] EMAIL CONFIRMATION REQUIRED')
+      console.log('📧 [UI] User email:', data.user.email)
+      console.log('📧 [UI] User must verify email before login')
+      showNotification('✅ Account created! Please verify your email to login.')
+    } else if (data?.session) {
+      console.log('✅ [UI] SESSION CREATED - Can login immediately')
+      showNotification('✅ Account created! Logging you in...')
+    }
+
+    // Reset form and switch to login
     setRegisterForm({
       fullName: '',
       email: '',
@@ -130,6 +184,7 @@ export default function AuthTabs() {
       agreedToTerms: false
     })
     setActiveTab('login')
+    setLoading(false)
   }
 
   return (

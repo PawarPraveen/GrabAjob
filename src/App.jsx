@@ -2,11 +2,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useEffect, useState } from 'react'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
+import ProfileSetup from './pages/ProfileSetup'
 import JobSeekerDashboard from './pages/JobSeekerDashboard'
 import JobsPage from './pages/JobsPage'
 import ProfilePage from './pages/ProfilePage'
 import RecruiterDashboard from './pages/RecruiterDashboard'
 import CreateAccountDemo from './pages/CreateAccountDemo'
+import AIMatchEngine from './pages/AIMatchEngine'
 import { supabase } from './lib/supabaseClient'
 import './index.css'
 
@@ -56,6 +58,22 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/demo/create-account" element={<CreateAccountDemo />} />
+
+        {/* Profile Setup - After Registration */}
+        <Route
+          path="/profile-setup"
+          element={
+            <ProtectedRoute>
+              <ProfileSetup />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* AI Match Engine - Job Matcher */}
+        <Route
+          path="/ai-match"
+          element={<AIMatchEngine />}
+        />
 
         {/* Job Seeker Routes */}
         <Route
