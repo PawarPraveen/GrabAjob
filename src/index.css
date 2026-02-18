@@ -54,6 +54,17 @@ body {
     @apply rounded-2xl border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-200 hover:scale-105;
   }
 
+  /* Progress ring animation */
+  .progress-ring circle {
+    transition: stroke-dasharray 600ms ease, stroke 600ms ease;
+    transform-origin: 50% 50%;
+  }
+
+  /* Danger button */
+  .btn-danger {
+    @apply px-4 py-2 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700;
+  }
+
   /* Typography */
   .heading-xl {
     @apply text-4xl md:text-5xl font-bold text-brand-dark tracking-tight;

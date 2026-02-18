@@ -14,14 +14,24 @@ export default function ProfilePage() {
     let mounted = true
     ;(async () => {
       const { session } = await auth.getSession()
+      console.log('[PROFILE] session fetched:', session)
       if (!mounted) return
       if (session?.user) {
-        let p = await getProfileByUserId(session.user.id)
+        console.log('[PROFILE] session.user.id:', session.user.id)
+        let p = null
+        try {
+          p = await getProfileByUserId(session.user.id)
+        } catch (err) {
+          console.error('getProfileByUserId threw:', err)
+        }
         if (!p) {
-          // Create initial profile if it doesn't exist
+          // Create initial local profile object if it doesn't exist on server
           p = { user_id: session.user.id }
         }
+        console.log('[PROFILE] setting profile:', p)
         setProfile(p)
+      } else {
+        console.warn('[PROFILE] No session.user found')
       }
       setLoading(false)
     })()
@@ -29,9 +39,34 @@ export default function ProfilePage() {
   }, [])
 
   const handleSelectUserType = async (type) => {
-    if (!profile?.user_id) return
-    const updated = await upsertProfile({ user_id: profile.user_id, user_type: type })
-    setProfile(updated)
+    try {
+      // Immediately update UI so form renders even if backend call fails
+      setProfile(prev => ({ ...(prev || {}), user_type: type }))
+      console.log('handleSelectUserType: locally set type ->', type)
+
+      if (!profile?.user_id) {
+        console.warn('No profile.user_id; will attempt to upsert with session id')
+      }
+
+      // Attempt to persist server-side but don't block UI
+      const userId = (profile && profile.user_id) || (await (async () => {
+        const { session } = await auth.getSession()
+        return session?.user?.id
+      })())
+
+      if (!userId) {
+        console.error('No user id available to upsert profile')
+        return
+      }
+
+      const upsertPayload = { user_id: userId, user_type: type }
+      console.log('handleSelectUserType: upserting payload', upsertPayload)
+      const updated = await upsertProfile(upsertPayload)
+      console.log('upsertProfile returned:', updated)
+      if (updated) setProfile(updated)
+    } catch (err) {
+      console.error('handleSelectUserType error:', err)
+    }
   }
 
   if (loading) return <div className="p-6">Loading...</div>
@@ -92,11 +127,31 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            {profile.user_type === 'fresher' ? (
-              <FresherForm />
-            ) : (
-              <ExperiencedForm />
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <aside className="md:col-span-1">
+                <div className="bg-white rounded-2xl p-4 shadow-sm">
+                  <h4 className="font-semibold mb-3">Quick links</h4>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li className="cursor-pointer hover:text-blue-600">Preference</li>
+                    <li className="cursor-pointer hover:text-blue-600">Education</li>
+                    <li className="cursor-pointer hover:text-blue-600">Key skills</li>
+                    <li className="cursor-pointer hover:text-blue-600">Internships</li>
+                    <li className="cursor-pointer hover:text-blue-600">Projects</li>
+                    <li className="cursor-pointer hover:text-blue-600">Profile summary</li>
+                    <li className="cursor-pointer hover:text-blue-600">Accomplishments</li>
+                    <li className="cursor-pointer hover:text-blue-600">Resume</li>
+                  </ul>
+                </div>
+              </aside>
+
+              <main className="md:col-span-3 space-y-6">
+                {profile.user_type === 'fresher' ? (
+                  <FresherForm />
+                ) : (
+                  <ExperiencedForm />
+                )}
+              </main>
+            </div>
           </motion.div>
         )}
       </div>
