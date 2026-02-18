@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Upload, FileText, Zap, Target, BookOpen, CheckCircle, AlertCircle, Trash2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { matchJobWithResume, extractKeywords, getLearningResources, generateSuggestions } from '../utils/aiMatcher'
-import NavbarPublic from '../components/NavbarPublic'
+import Navbar from '../components/Navbar'
 import '../styles/AIMatchEngine.css'
 
 export default function AIMatchEngine() {
@@ -106,7 +106,7 @@ export default function AIMatchEngine() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <NavbarPublic />
+      <Navbar />
       
       <div className="pt-24 pb-20 px-6">
         {/* Header */}

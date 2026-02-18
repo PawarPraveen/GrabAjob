@@ -5,7 +5,10 @@ import Auth from './pages/Auth'
 import ProfileSetup from './pages/ProfileSetup'
 import JobSeekerDashboard from './pages/JobSeekerDashboard'
 import JobsPage from './pages/JobsPage'
-import ProfilePage from './pages/ProfilePage'
+import Profile from './pages/Profile'
+import SettingsPage from './pages/Settings'
+import AboutPage from './pages/About'
+import HelpPage from './pages/Help'
 import RecruiterDashboard from './pages/RecruiterDashboard'
 import CreateAccountDemo from './pages/CreateAccountDemo'
 import AIMatchEngine from './pages/AIMatchEngine'
@@ -75,6 +78,22 @@ function App() {
           element={<AIMatchEngine />}
         />
 
+        {/* Public pages */}
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/help" element={<HelpPage />} />
+
+        {/* Profile & Settings */}
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <SettingsPage />
+          </ProtectedRoute>
+        } />
+
         {/* Job Seeker Routes */}
         <Route
           path="/dashboard/seeker"
@@ -96,7 +115,7 @@ function App() {
           path="/dashboard/seeker/profile"
           element={
             <ProtectedRoute requiredRole="job-seeker">
-              <ProfilePage />
+              <Profile />
             </ProtectedRoute>
           }
         />

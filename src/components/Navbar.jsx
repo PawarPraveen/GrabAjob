@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import ProfileAvatarDropdown from './ProfileAvatarDropdown'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
@@ -33,20 +34,12 @@ export default function Navbar() {
           </a>
         </div>
 
-        {/* CTA Buttons */}
+        {/* Profile / Auth area */}
         <div className="hidden md:flex items-center gap-4">
-          <button
-            onClick={() => navigate('/auth')}
-            className="text-gray-600 hover:text-gray-900 transition-smooth"
-          >
-            Log In
-          </button>
-          <button
-            onClick={() => navigate('/auth')}
-            className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-smooth font-semibold"
-          >
-            Sign Up
-          </button>
+          {/* ProfileAvatarDropdown will handle logged in state and menu */}
+          <div>
+            <ProfileAvatarDropdown />
+          </div>
         </div>
 
         {/* Mobile Menu Button */}

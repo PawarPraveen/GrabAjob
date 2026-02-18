@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, ArrowLeft } from 'lucide-react'
-import { supabase } from '../lib/supabaseClient'
+import { supabase, auth as supabaseAuth, isUsingMockAuth } from '../lib/supabaseClient'
 import NavbarPublic from '../components/NavbarPublic'
 
 export default function Auth() {
@@ -70,31 +70,33 @@ export default function Auth() {
         return;
       }
 
-      console.log("Creating user with:", cleanEmail);
+      console.log("Creating user with:", cleanEmail, "(mock mode:", isUsingMockAuth, ")");
 
-      const { data, error } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: password
-      });
+      // Use centralized auth helper to ensure consistent behavior
+      const result = await supabaseAuth.signup(cleanEmail, password, { role: role || 'job-seeker' })
 
-      console.log("Signup response:", data);
-      console.log("Signup error:", error);
+      console.log('Signup result:', result)
 
-      if (error) {
-        alert("Signup failed: " + error.message);
-        setLoading(false);
-        return;
+      if (result.error) {
+        alert('Signup failed: ' + result.error)
+        setLoading(false)
+        return
       }
 
-      if (data.user) {
-        alert("Signup successful");
-        console.log("Created user:", data.user);
+      if (result.data?.user) {
+        alert('Signup successful')
+        console.log('Created user:', result.data.user)
+      } else {
+        // If no session returned, likely email confirmation required
+        alert('Signup created. Please check your email to confirm your account (if required).')
+        console.log('Signup note: no immediate session returned; confirm-email may be required')
       }
 
     } catch (err) {
-      console.error("Unexpected error:", err);
+      console.error('Unexpected error:', err)
+      alert('Signup error: ' + (err?.message || err))
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
@@ -102,41 +104,38 @@ export default function Auth() {
     e?.preventDefault?.()
     if (loading) return
     try {
-      setLoading(true);
+      setLoading(true)
 
-      const cleanEmail = (formData.email || '').trim();
-      const password = formData.password;
+      const cleanEmail = (formData.email || '').trim()
+      const password = formData.password
 
-      // Debug: show which SUPABASE URL is being used (guarded)
-      console.log('SUPABASE URL:', typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL : 'undefined');
+      console.log('Attempting login with:', cleanEmail, '(mock mode:', isUsingMockAuth, ')')
 
-      console.log('Attempting login with:', cleanEmail);
+      const result = await supabaseAuth.signin(cleanEmail, password)
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password: password
-      });
+      console.log('Login result:', result)
 
-      console.log('Login response:', data);
-      console.log('Login response (string):', safeStringify(data));
-      console.log('Login error:', error);
-      console.log('Login error (string):', safeStringify(error));
-
-      if (error) {
-        alert('Login failed: ' + error.message);
-        setLoading(false);
-        return;
+      if (result.error) {
+        alert('Login failed: ' + result.error)
+        setLoading(false)
+        return
       }
 
-      if (data?.session) {
-        console.log('Session:', data.session);
-        alert('Login successful');
+      if (result.data?.session) {
+        console.log('Session:', result.data.session)
+        // Navigate to AI Match dashboard after successful login
+        navigate('/ai-match')
+      } else {
+        // No session -> likely email not confirmed or other configuration issue
+        alert('Login created no session. Check email confirmation or Supabase settings.')
+        console.warn('Login note: no session returned; check `Confirm email` and SMTP settings in Supabase')
       }
 
     } catch (err) {
-      console.error('Unexpected login error:', err);
+      console.error('Unexpected login error:', err)
+      alert('Login error: ' + (err?.message || err))
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
